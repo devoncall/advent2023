@@ -19,8 +19,15 @@ fn main() {
 
 fn read_num(s: String) -> u32 {
     let find_num: Regex =
-        Regex::new(r"[0-9]|one|two|three|four|five|six|seven|eight|nine").unwrap();
-    let numbers: Vec<&str> = find_num.find_iter(&s).map(|m| m.as_str()).collect();
+        Regex::new(r"(?m)(?=([0-9]|one|two|three|four|five|six|seven|eight|nine))").unwrap();
+
+    let numbers: Vec<&str> = find_num
+        .captures_iter(&s)
+        .map(|m| match m.get(1) {
+            Some(number) => number.as_str(),
+            None => "",
+        })
+        .collect();
     return match (numbers.first(), numbers.last()) {
         (Some(first), Some(last)) => {
             let f = to_digit(first);
