@@ -1,5 +1,6 @@
 use regex::Regex;
 use std::cmp::max;
+use std::env::args;
 use std::io;
 
 #[derive(Debug)]
@@ -110,18 +111,41 @@ impl Color {
 }
 
 fn main() {
+    let mode = args().nth(1).expect("include 1 or 2");
+    let puzzle = match mode.as_str() {
+        "1" => 1,
+        "2" => 2,
+        _ => panic!("unrecognized puzzle id."),
+    };
     let mut total = 0;
     for line in io::stdin().lines() {
         total = total
-            + match line {
-                Ok(msg) => {
+            + match (puzzle, line) {
+                (1, Ok(msg)) => {
+                    let game = Game::new(msg.as_str());
+                    match game {
+                        Some(g) => {
+                            if g.possible(Clue {
+                                red: 12,
+                                green: 13,
+                                blue: 14,
+                            }) {
+                                g.id
+                            } else {
+                                0
+                            }
+                        }
+                        None => 0,
+                    }
+                }
+                (2, Ok(msg)) => {
                     let game = Game::new(msg.as_str());
                     match game {
                         Some(g) => g.minimum().power(),
                         None => 0,
                     }
                 }
-                Err(_) => break,
+                _ => break,
             }
     }
     println!("total: {total}")
