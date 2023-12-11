@@ -7,7 +7,7 @@ fn main() {
         total = total
             + match line {
                 Ok(msg) => {
-                    let num = read_num(msg.clone());
+                    let num = read_num(msg.as_str());
                     println!("{msg}: {num}");
                     num
                 }
@@ -17,18 +17,25 @@ fn main() {
     println!("total: {total}")
 }
 
-fn read_num(s: String) -> u32 {
+fn read_num(s: &str) -> u32 {
     let find_num: Regex =
-        Regex::new(r"(?m)(?=([0-9]|one|two|three|four|five|six|seven|eight|nine))").unwrap();
-
-    let numbers: Vec<&str> = find_num
-        .captures_iter(&s)
-        .map(|m| match m.get(1) {
-            Some(number) => number.as_str(),
-            None => "",
-        })
-        .collect();
-    return match (numbers.first(), numbers.last()) {
+        Regex::new(r"([0-9]|one|two|three|four|five|six|seven|eight|nine)").unwrap();
+    let mut index = 0;
+    let mut first: Option<&str> = None;
+    let mut last: Option<&str> = None;
+    while index < s.len() {
+        match find_num.find_at(s, index) {
+            Some(found) => {
+                if first.is_none() {
+                    first = Some(found.as_str());
+                }
+                last = Some(found.as_str());
+                index = found.start() + 1;
+            }
+            None => break,
+        }
+    }
+    return match (first, last) {
         (Some(first), Some(last)) => {
             let f = to_digit(first);
             let l = to_digit(last);
