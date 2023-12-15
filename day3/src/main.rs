@@ -1,7 +1,5 @@
-use std::slice::SliceIndex;
-
 use regex::Regex;
-
+use std::io;
 struct Schematic(Vec<String>);
 
 impl Schematic {
@@ -76,5 +74,35 @@ impl<'a> Iterator for PartIter<'a> {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut total = 0;
+    let schematic = Schematic::new(io::stdin().lines().filter_map(|line| match line {
+        Ok(l) => Some(l),
+        Err(_) => None,
+    }));
+    for part in PartIter::new(&schematic).filter_map(|p| {
+        let mut row_start = p.row;
+        if row_start > 0 {
+            row_start -= 1;
+        }
+        for r in row_start..(p.row + 2) {
+            let mut col_start = p.start;
+            if col_start > 0 {
+                col_start -= 1;
+            }
+            for c in col_start..(p.end + 1) {
+                match p.schematic.get(r, c) {
+                    Some(c) => {
+                        if c != b'.' && (c < b'0' || c > b'9') {
+                            return Some(p.val);
+                        }
+                    }
+                    None => (),
+                }
+            }
+        }
+        None
+    }) {
+        total += part
+    }
+    println!("total: {total}")
 }
