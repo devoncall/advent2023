@@ -1,4 +1,5 @@
 use regex::Regex;
+use std::collections::HashMap;
 use std::io;
 struct Schematic(Vec<String>);
 
@@ -73,6 +74,27 @@ impl<'a> Iterator for PartIter<'a> {
     }
 }
 
+enum Gear {
+    Incomplete(usize),
+    Complete(usize, usize),
+    OverLimit,
+}
+
+impl Gear {
+    fn include(&self, num: usize) -> Gear {
+        match self {
+            Self::Incomplete(first) => Self::Complete(first.clone(), num),
+            _ => Self::OverLimit,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+struct Coordinate {
+    row: usize,
+    col: usize,
+}
+
 fn main() {
     let mut total = 0;
     let schematic = Schematic::new(io::stdin().lines().filter_map(|line| match line {
@@ -104,5 +126,42 @@ fn main() {
     }) {
         total += part
     }
-    println!("total: {total}")
+    println!("total puzzle 1: {total}");
+
+    total = 0;
+    let mut gears: HashMap<Coordinate, Gear> = HashMap::new();
+    for p in PartIter::new(&schematic) {
+        let mut row_start = p.row;
+        if row_start > 0 {
+            row_start -= 1;
+        }
+        for r in row_start..(p.row + 2) {
+            let mut col_start = p.start;
+            if col_start > 0 {
+                col_start -= 1;
+            }
+            for c in col_start..(p.end + 1) {
+                match p.schematic.get(r, c) {
+                    Some(b'*') => {
+                        let coor = Coordinate { row: r, col: c };
+                        gears.insert(
+                            coor,
+                            match gears.get(&coor) {
+                                Some(g) => g.include(p.val),
+                                None => Gear::Incomplete(p.val),
+                            },
+                        );
+                    }
+                    _ => (),
+                }
+            }
+        }
+    }
+    for (_, g) in &gears {
+        match g {
+            &Gear::Complete(first, second) => total += first * second,
+            _ => (),
+        }
+    }
+    println!("total puzzle 2: {total}");
 }
